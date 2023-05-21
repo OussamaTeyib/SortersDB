@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <windows.h>
 
 #define MAX1 50
 #define MAX2 100
@@ -11,7 +12,7 @@ typedef struct {
     char serialNum[MAX1];
     char model[MAX1];
     char maker[MAX1];
-    char adap_t[MAX2];
+    char adap[MAX2];
     struct tm startDate;
     struct tm lastDate;
     char notes[MAX3];
@@ -29,7 +30,7 @@ int main(void)
     system("cls");
     printf("Qu'est ce que vous voulez:\n");
     printf("	1. Ajouter une nouvelle machine\n");
-    printf("	2. Afficher les infos d'une machine\n");
+    printf("	2. Rechercher une machine\n");
     printf("	0. Rien!\n");
     printf("Entrez votre choix: ");
     do
@@ -46,7 +47,7 @@ int main(void)
     switch (choice)
     {
         case 1: // adding
-            printf("\nSaisir le numéro de serie: ");
+            printf("\nSaisir le numéro de série: ");
             fflush(stdin);
             fgets(sorter.serialNum, MAX1, stdin);
             sorter.serialNum[strcspn(sorter.serialNum, "\n")] = '\0';
@@ -68,8 +69,8 @@ int main(void)
 
             printf("Saisir le type d'adaptation: ");
             fflush(stdin);
-            fgets(sorter.adap_t, MAX2, stdin);
-            sorter.adap_t[strcspn(sorter.adap_t, "\n")] = '\0';
+            fgets(sorter.adap, MAX2, stdin);
+            sorter.adap[strcspn(sorter.adap, "\n")] = '\0';
 
             sorter.startDate.tm_hour = sorter.startDate.tm_min = sorter.startDate.tm_sec = 0;
             sorter.startDate.tm_isdst = -1;
@@ -103,15 +104,51 @@ int main(void)
             sorter.notes[strcspn(sorter.notes, "\n")] = '\0';
 
             if (1 == fwrite(&sorter, sizeof sorter, 1, fp))
-                printf("Données enregistrées\n");
+                printf("\nDonnées enregistrées\n");
             else
-                die("ERREUR: Données NON enregistrées!");
+                die("\nERREUR: Données NON enregistrées!");
 
             fclose(fp);         
             break;
 
-        case 2: // print
+        case 2: // search
+            char temp[MAX1];
+            printf("\nSaisir le numéro de série: ");
+            fflush(stdin);
+            fgets(temp, MAX1, stdin);
+            temp[strcspn(temp, "\n")] = '\0';
+
+            snprintf(fName, MAX3, "../sorters/%s.bin", temp);
+            fp = fopen(fName, "rb");
+            if (!fp)
+            {
+                WIN32_FIND_DATAA findData;
+                HANDLE hFind = FindFirstFileA("../sorters/*.bin", &findData);
+                if (hFind == INVALID_HANDLE_VALUE)
+                    die("\nIntrouvable. Aucune machine n'a encore été enregistrée!");
+
+                fprintf(stderr, "\nLe numéro est INCORRECT!\n");
+                printf("Voici les machines enregistrées:\n");
+                do
+                {
+                    if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                        printf("- Machine N°%s\n", strtok(findData.cFileName, ".")); 
+                } while (FindNextFileA(hFind, &findData));                
+                die("\nVeuillez réessayer.");
+            }
+
+            if (1 != fread(&sorter, sizeof sorter, 1, fp) || strncmp(temp, sorter.serialNum, MAX1))
+                die("Ce ficher est vide!");
+
+            printf("\nNuméro de série: %s\n", sorter.serialNum);
+            printf("Modèle: %s\n", sorter.model);
+            printf("Fabricant: %s\n", sorter.maker);
+            printf("Type d'adaptation: %s\n", sorter.adap);
+            printf("Date de mise en service: %d/%d/%d\n", sorter.startDate.tm_mday, sorter.startDate.tm_mon + 1, sorter.startDate.tm_year + 1900);
+            printf("Dernière date de service: %d/%d/%d\n", sorter.lastDate.tm_mday, sorter.lastDate.tm_mon + 1, sorter.lastDate.tm_year + 1900);
+            printf("Remarques: \n%s\n", sorter.notes);
             
+            fclose(fp);
             break;
         case 0:
             // nothing to do!
