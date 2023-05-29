@@ -4,6 +4,7 @@
 #include <time.h>
 #include <windows.h>
 
+#define MAX0 12
 #define MAX1 50
 #define MAX2 100
 #define MAX3 1000
@@ -13,22 +14,73 @@ typedef struct {
     char model[MAX1];
     char maker[MAX1];
     char adap[MAX2];
-    struct tm startDate;
-    struct tm lastDate;
+    char startDate[MAX0];
+    char lastDate[MAX0];
     char notes[MAX3];
 } SORTER;
 
 void die(char *msg)
 {
     fprintf(stderr, "%s\n", msg);
-    int c = getchar();
     exit(EXIT_FAILURE);
+}
+
+void readLine(char *line, int max)
+{
+    fflush(stdin);
+    fgets(line, max, stdin);
+    line[strcspn(line, "\n")] = '\0';
+}
+
+void readDate(char *szDate, int max)
+{
+    struct tm date = {0};
+    date.tm_isdst = -1;
+    do
+    {
+        fflush(stdin);
+        scanf("%d/%d/%d", &date.tm_mday, &date.tm_mon, &date.tm_year);
+        date.tm_year -= 1900;
+        date.tm_mon -= 1;
+        if (-1 == mktime(&date))
+            printf("ERREUR!\nSaisir une date valide: ");
+    } while (-1 == mktime(&date));
+
+    snprintf(szDate, max, "%d/%d/%d", date.tm_mday, date.tm_mon + 1, date.tm_year + 1900);
+}
+
+void readNote(char *notes, int max)
+{
+    char line[max];
+    char *text = calloc(max, sizeof *text);
+    do
+    {
+        fflush(stdin);
+        fgets(line, max, stdin);
+        if (line[0] != '\n')
+            strncat(text, line, max);
+    } while(line[0] != '\n');
+    snprintf(notes, max, "%s", text);
+}
+
+void printInfo(void)
+{
+    printf(" _________________________________________________________________\n");
+    printf("|                                                                 |\n");
+    printf("|         Ce programme a été écrit par Oussama Med Teyib.         |\n");
+    printf("|_________________________________________________________________|\n");
+    printf("|                                                                 |\n");
+    printf("| Le code source est disponible sur:                              |\n");
+    printf("| https://github.com/OussamaTeyib/SortersDB                       |\n");
+    printf("|_________________________________________________________________|\n");
+    printf("\n");
 }
     
 int main(void)
 {
     int choice;
     system("cls");
+    printInfo();
     printf("Qu'est ce que vous voulez:\n");
     printf("	1. Ajouter une nouvelle machine\n");
     printf("	2. Rechercher une machine\n");
@@ -43,66 +95,36 @@ int main(void)
     } while (choice < 0 || choice > 2);
 
     SORTER sorter;
-    char fName[MAX3];
+    char fName[MAX_PATH];
     FILE *fp;
     switch (choice)
     {
         case 1: // adding
             printf("\n\nLe numéro de série: ");
-            fflush(stdin);
-            fgets(sorter.serialNum, MAX1, stdin);
-            sorter.serialNum[strcspn(sorter.serialNum, "\n")] = '\0';
-
-            snprintf(fName, MAX3, "../sorters/%s.bin", sorter.serialNum);
+            readLine(sorter.serialNum, MAX1);           
+ 
+            snprintf(fName, MAX_PATH, "../sorters/%s.bin", sorter.serialNum);
             fp = fopen(fName, "wb");
             if (!fp)
                 die("Imposible de créer un ficher!");
 
             printf("Saisir le modèle: ");
-            fflush(stdin);
-            fgets(sorter.model, MAX1, stdin);
-            sorter.model[strcspn(sorter.model, "\n")] = '\0';
+            readLine(sorter.model, MAX1); 
 
             printf("Saisir le nom du fabricant: ");
-            fflush(stdin);
-            fgets(sorter.maker, MAX1, stdin);
-            sorter.maker[strcspn(sorter.maker, "\n")] = '\0';
+            readLine(sorter.maker, MAX1); 
 
             printf("Saisir le type d'adaptation: ");
-            fflush(stdin);
-            fgets(sorter.adap, MAX2, stdin);
-            sorter.adap[strcspn(sorter.adap, "\n")] = '\0';
+            readLine(sorter.adap, MAX2); 
 
-            sorter.startDate.tm_hour = sorter.startDate.tm_min = sorter.startDate.tm_sec = 0;
-            sorter.startDate.tm_isdst = -1;
-            printf("Saisir la date de mise en service (JJ/MM/AAAA): ");
-            do
-            {
-                fflush(stdin);
-                scanf("%d/%d/%d", &sorter.startDate.tm_mday, &sorter.startDate.tm_mon, &sorter.startDate.tm_year);
-                sorter.startDate.tm_year -= 1900;
-                sorter.startDate.tm_mon -= 1;
-                if (-1 == mktime(&sorter.startDate))
-                    printf("ERREUR!\nSaisir une date valide: ");
-            } while (-1 == mktime(&sorter.startDate));
+            printf("Saisir la date de mise en servic:!e (JJ/MM/AAAA): ");
+            readDate(sorter.startDate, MAX0);            
 
-            sorter.lastDate.tm_hour = sorter.lastDate.tm_min = sorter.lastDate.tm_sec = 0;
-            sorter.lastDate.tm_isdst = -1;
             printf("Saisir la dernière date de service (JJ/MM/AAAA): ");
-            do
-            {
-                fflush(stdin);
-                scanf("%d/%d/%d", &sorter.lastDate.tm_mday, &sorter.lastDate.tm_mon, &sorter.lastDate.tm_year);
-                sorter.lastDate.tm_year -= 1900;
-                sorter.lastDate.tm_mon -= 1;
-                if (-1 == mktime(&sorter.lastDate))
-                    printf("ERREUR!\nSaisir une date valide: ");
-            } while (-1 == mktime(&sorter.lastDate));
+            readDate(sorter.lastDate, MAX0);  
 
             printf("Saisir vos remarques: ");
-            fflush(stdin);
-            fgets(sorter.notes, MAX3, stdin);
-            sorter.notes[strcspn(sorter.notes, "\n")] = '\0';
+            readNote(sorter.notes, MAX3); 
 
             if (1 == fwrite(&sorter, sizeof sorter, 1, fp))
                 printf("\nDonnées enregistrées\n");
@@ -115,11 +137,9 @@ int main(void)
         case 2: // search
             char temp[MAX1];
             printf("\nSaisir le numéro de série: ");
-            fflush(stdin);
-            fgets(temp, MAX1, stdin);
-            temp[strcspn(temp, "\n")] = '\0';
+            readLine(temp, MAX1); 
 
-            snprintf(fName, MAX3, "../sorters/%s.bin", temp);
+            snprintf(fName, MAX_PATH, "../sorters/%s.bin", temp);
             fp = fopen(fName, "rb");
             if (!fp)
             {
@@ -145,9 +165,9 @@ int main(void)
             printf("Modèle: %s\n", sorter.model);
             printf("Fabricant: %s\n", sorter.maker);
             printf("Type d'adaptation: %s\n", sorter.adap);
-            printf("Date de mise en service: %d/%d/%d\n", sorter.startDate.tm_mday, sorter.startDate.tm_mon + 1, sorter.startDate.tm_year + 1900);
-            printf("Dernière date de service: %d/%d/%d\n", sorter.lastDate.tm_mday, sorter.lastDate.tm_mon + 1, sorter.lastDate.tm_year + 1900);
-            printf("Remarques: \n%s\n", sorter.notes);
+            printf("Date de mise en service: %s\n", sorter.startDate);
+            printf("Dernière date de service: %s\n", sorter.lastDate);
+            printf("Remarques: \n %s\n", sorter.notes);
             
             fclose(fp);
             break;
@@ -155,10 +175,6 @@ int main(void)
         default:
             printf("hi\n"); // nothing to do!
     }
-
-    printf("\nCe Programme est crée par Oussama Med Teyib.");
-    printf("\nLe code source est disponible sur:");
-    printf("\nhttps://github.com/OussamaTeyib/SortersDB\n");
     int ch = getchar();
     return EXIT_SUCCESS;
  }
