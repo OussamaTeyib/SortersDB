@@ -1,9 +1,18 @@
-build: src/main.c
-	gcc -o bin/main.exe src/main.c
+CC = gcc
+CFLAGS = -g -std=c2x -Wall -Wextra -Werror
 
-run:
-	cd bin/ && cmd.exe /C "start main.exe"
+SRC_DIR = src
+BIN_DIR = bin
 
-open:
-	cd src/ && cmd.exe /C "start notepad main.c"
- 
+$(BIN_DIR)/main: $(SRC_DIR)/main.c
+	@mkdir -p bin
+	@$(CC) $(CFLAGS) -o $(BIN_DIR)/main $(SRC_DIR)/main.c
+
+.PHONY: push clear
+
+push:
+	@git add .
+	@git commit -m "$(msg)"
+	@git push origin main
+clear:
+	@rm -r bin
