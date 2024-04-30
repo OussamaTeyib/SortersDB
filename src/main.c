@@ -21,7 +21,6 @@ typedef struct {
 void die(char *msg)
 {
     fprintf(stderr, "%s\n", msg);
-    int c = getchar();
     exit(EXIT_FAILURE);
 }
     
@@ -153,12 +152,8 @@ int main(void)
             break;
 
         default:
-            printf("hi\n"); // nothing to do!
+            printf("Ok!\n"); // nothing to do!
     }
 
-    printf("\nCe Programme est crée par Oussama Med Teyib.");
-    printf("\nLe code source est disponible sur:");
-    printf("\nhttps://github.com/OussamaTeyib/SortersDB\n");
-    int ch = getchar();
     return EXIT_SUCCESS;
  }
