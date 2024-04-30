@@ -5,5 +5,5 @@ It is designed to be used by the Central Bank of Mauritania to keep track of var
 ![Banknote Sorter CPS X2300](https://github.com/OussamaTeyib/SortersDB/blob/main/assests/images/BanknoteSorter.jpeg)
 
 
-## Credits
-This program is written by Oussama Teyib in the hope that it will be useful.
+### License:
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
